@@ -103,9 +103,13 @@ class Const {
 
             // Mime types
             const val IMAGE = "image/*"
+            const val IMAGE_PREFIX = "image/"
             const val IMAGE_JPEG = "image/jpeg"
             const val VIDEO_MP4 = "video/mp4"
+            const val VIDEO_PREFIX = "video/"
+            const val FILE_PREFIX = "application/pdf"
             const val FILE = "*/*"
+            const val TEXT_PREFIX = "text/plain"
 
             // File types
             const val AVATAR_TYPE = "avatar"

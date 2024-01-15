@@ -2,17 +2,27 @@ package com.clover.studio.spikamessenger.ui.main
 
 import android.Manifest
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Parcelable
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.asLiveData
+import com.clover.studio.spikamessenger.MainApplication
 import com.clover.studio.spikamessenger.R
+import com.clover.studio.spikamessenger.data.models.FileData
+import com.clover.studio.spikamessenger.data.models.entity.Message
 import com.clover.studio.spikamessenger.databinding.ActivityMainBinding
+import com.clover.studio.spikamessenger.ui.main.chat.ChatViewModel
+import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ForwardBottomSheet
 import com.clover.studio.spikamessenger.ui.onboarding.startOnboardingActivity
 import com.clover.studio.spikamessenger.utils.AppPermissions
 import com.clover.studio.spikamessenger.utils.AppPermissions.notificationPermission
@@ -22,8 +32,12 @@ import com.clover.studio.spikamessenger.utils.Tools
 import com.clover.studio.spikamessenger.utils.dialog.DialogError
 import com.clover.studio.spikamessenger.utils.extendables.BaseActivity
 import com.clover.studio.spikamessenger.utils.extendables.DialogInteraction
+import com.clover.studio.spikamessenger.utils.helpers.FilesHelper
+import com.clover.studio.spikamessenger.utils.helpers.MediaHelper
 import com.clover.studio.spikamessenger.utils.helpers.PhonebookService
 import com.clover.studio.spikamessenger.utils.helpers.Resource
+import com.clover.studio.spikamessenger.utils.helpers.TempUri
+import com.clover.studio.spikamessenger.utils.helpers.UploadService
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.JsonObject
@@ -48,9 +62,20 @@ fun startMainActivity(fromActivity: Activity) = fromActivity.apply {
 class MainActivity : BaseActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+    private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var bindingSetup: ActivityMainBinding
     private lateinit var notificationPermissionLauncher: ActivityResultLauncher<String>
     private var phonebookService: Intent? = null
+
+    private var tempFilesToCreate: MutableList<TempUri> = ArrayList()
+    private var uriPairList: MutableList<Pair<Uri, Uri>> = mutableListOf()
+    private var thumbnailUris: MutableList<Uri> = ArrayList()
+    private var currentMediaLocation: MutableList<Uri> = ArrayList()
+    private var uploadFiles: ArrayList<FileData> = ArrayList()
+    private var filesSelected: MutableList<Uri> = ArrayList()
+    private var unsentMessages: MutableList<Message> = ArrayList()
+
+    private var lastReceivedIntent: Intent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +89,116 @@ class MainActivity : BaseActivity() {
         initializeObservers()
         sendPushTokenToServer()
         startPhonebookService()
+
+        if (Intent.ACTION_SEND == intent.action && intent != null) {
+            handleReceivedData(intent)
+        }
+    }
+
+    private fun handleReceivedData(intent: Intent?) {
+        val uri = intent?.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+        Timber.d("Intent::::: $intent")
+
+        if (uri != null) {
+            if (Const.JsonFields.TEXT_PREFIX == intent.type) {
+                // TODO Handle text being sent
+
+            } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true ||
+                intent.type?.startsWith(Const.JsonFields.VIDEO_PREFIX) == true
+            ) {
+                // Sending single image
+                val fileMimeType = Tools.getFileMimeType(applicationContext, uri)
+                if ((fileMimeType?.contains(Const.JsonFields.IMAGE_TYPE) == true ||
+                            fileMimeType?.contains(Const.JsonFields.VIDEO_TYPE) == true) &&
+                    !Tools.forbiddenMimeTypes(fileMimeType)
+                ) {
+                    MediaHelper.convertMedia(
+                        context = applicationContext,
+                        uri = uri,
+                        fileMimeType = Tools.getFileMimeType(applicationContext, uri),
+                        tempFilesToCreate = tempFilesToCreate,
+                        uriPairList = uriPairList,
+                        thumbnailUris = thumbnailUris,
+                        currentMediaLocation = currentMediaLocation
+                    )
+                }
+
+                Timber.d("Done converting")
+                Timber.d("Temp files to create: $tempFilesToCreate")
+
+            } else if (intent.type?.startsWith(Const.JsonFields.FILE_PREFIX) == true) {
+                // Handle single image being sent
+                filesSelected.add(uri)
+                tempFilesToCreate.add(TempUri(uri, Const.JsonFields.FILE_TYPE))
+            } else {
+                Timber.d("Error")
+            }
+
+            val forwardBottomSheet =
+                viewModel.getLocalUserId()?.let {
+                    ForwardBottomSheet(
+                        context = this,
+                        localId = it,
+                        title = getString(R.string.share_message)
+                    )
+                }
+            forwardBottomSheet?.setForwardListener(object :
+                ForwardBottomSheet.BottomSheetForwardAction {
+                override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
+
+                    sendFile(roomIds)
+                    Timber.d("Upload files: $uploadFiles")
+                    startUploadService(uploadFiles)
+
+                    uploadFiles.clear()
+                }
+            })
+            forwardBottomSheet?.show(
+                this.supportFragmentManager,
+                ForwardBottomSheet.TAG
+            )
+        }
+    }
+
+    private fun sendFile(roomIds: ArrayList<Int>) {
+        if (tempFilesToCreate.isNotEmpty()) {
+            for (tempFile in tempFilesToCreate) {
+                createTempFileMessage(tempFile.uri, tempFile.type, roomIds.first())
+            }
+
+            Timber.d("Temp files: $tempFilesToCreate")
+            tempFilesToCreate.clear()
+
+            Timber.d("Thumbnail uris: $thumbnailUris")
+
+            // Crash
+            FilesHelper.sendFiles(
+                unsentMessages,
+                uploadFiles,
+                filesSelected,
+                thumbnailUris,
+                currentMediaLocation,
+                roomId = roomIds.first()
+            )
+        }
+    }
+
+    private fun createTempFileMessage(uri: Uri, type: String, roomId: Int) {
+        val tempMessage = viewModel.getLocalUserId()?.let {
+            FilesHelper.createTempMessage(
+                uri = uri,
+                type = type,
+                localUserId = it,
+                roomId = roomId,
+                unsentMessages = unsentMessages
+            )
+        }
+
+        if (tempMessage != null) {
+            Timber.d("Temp created message:$tempMessage")
+            unsentMessages.add(tempMessage)
+            chatViewModel.storeMessageLocally(tempMessage)
+        }
     }
 
     private fun startPhonebookService() {
@@ -169,6 +304,44 @@ class MainActivity : BaseActivity() {
         })
     }
 
+    private fun startUploadService(files: ArrayList<FileData>) {
+        val intent = Intent(MainApplication.appContext, UploadService::class.java)
+        intent.putParcelableArrayListExtra(Const.IntentExtras.FILES_EXTRA, files)
+        MainApplication.appContext.startService(intent)
+        this.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    private lateinit var fileUploadService: UploadService
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as UploadService.UploadServiceBinder
+            fileUploadService = binder.getService()
+            fileUploadService.setCallbackListener(object : UploadService.FileUploadCallback {
+                override fun updateUploadProgressBar(
+                    progress: Int,
+                    maxProgress: Int,
+                    localId: String?
+                ) {
+                    Timber.d("Uploading")
+                }
+
+                override fun uploadingFinished(uploadedFiles: MutableList<FileData>) {
+                    Timber.d("Finished")
+                    Tools.deleteTemporaryMedia(applicationContext)
+                    applicationContext?.cacheDir?.deleteRecursively()
+                    uriPairList.clear()
+                    uploadedFiles.clear()
+                    unsentMessages.clear()
+                }
+            })
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Timber.d("Service disconnected")
+        }
+    }
+
+
     override fun onStart() {
         super.onStart()
         Timber.d("First SSE launch = ${viewModel.checkIfFirstSSELaunch()}")
@@ -184,5 +357,19 @@ class MainActivity : BaseActivity() {
         if (phonebookService != null) {
             stopService(phonebookService)
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        // Handle the new intent when the activity is already running
+        if (intent?.action == Intent.ACTION_SEND && intent.type != null) {
+            handleReceivedData(intent)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lastReceivedIntent = intent
     }
 }

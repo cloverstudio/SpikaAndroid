@@ -132,7 +132,7 @@ object FilesHelper {
         )
     }
 
-    fun createTempFile(
+    private fun createTempFile(
         uri: Uri,
         type: String,
         localUserId: Int,
@@ -288,6 +288,99 @@ object FilesHelper {
         return file
     }
 
+    fun createTempMessage(
+        uri: Uri,
+        type: String,
+        localUserId: Int,
+        roomId: Int,
+        unsentMessages: MutableList<Message>
+    ) = createTempFile(
+        uri = uri,
+        type = type,
+        localUserId = localUserId,
+        roomId = roomId,
+        unsentMessages = unsentMessages,
+    )
+
+    fun sendFiles(
+        unsentMessages: List<Message>,
+        uploadFiles: MutableList<FileData>,
+        filesSelected: MutableList<Uri>,
+        thumbnailUris: MutableList<Uri>,
+        currentMediaLocation: MutableList<Uri>,
+        roomId: Int
+    ) {
+        Timber.d("unsentMessages message :$unsentMessages")
+        Timber.d("uploadFiles message :$uploadFiles")
+        Timber.d("filesSelected message :$filesSelected")
+        Timber.d("thumbnailUris message :$thumbnailUris")
+        Timber.d("currentMediaLocation message :$currentMediaLocation")
+        Timber.d("roomId message :$roomId")
+
+
+        if (unsentMessages.isNotEmpty()) {
+            for (unsentMessage in unsentMessages) {
+                when (unsentMessage.type) {
+                    Const.JsonFields.IMAGE_TYPE, Const.JsonFields.VIDEO_TYPE -> {
+                        // Send thumbnail
+                        uploadFiles(
+                            isThumbnail = true,
+                            uri = thumbnailUris.first(),
+                            localId = unsentMessage.localId!!,
+                            metadata = unsentMessage.body?.file?.metaData,
+                            uploadFiles = uploadFiles,
+                            roomId = roomId
+                        )
+                        // Send original image
+                        uploadFiles(
+                            isThumbnail = false,
+                            uri = currentMediaLocation.first(),
+                            localId = unsentMessage.localId,
+                            metadata = unsentMessage.body?.file?.metaData,
+                            roomId = roomId,
+                            uploadFiles = uploadFiles
+                        )
+                        currentMediaLocation.removeFirst()
+                        thumbnailUris.removeFirst()
+                    }
+
+                    Const.JsonFields.FILE_TYPE -> {
+                        // Send file
+                        uploadFiles(
+                            isThumbnail = false,
+                            uri = filesSelected.first(),
+                            localId = unsentMessage.localId!!,
+                            metadata = null,
+                            roomId = roomId,
+                            uploadFiles = uploadFiles
+                        )
+                        filesSelected.removeFirst()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun uploadFiles(
+        isThumbnail: Boolean,
+        uri: Uri,
+        localId: String,
+        roomId: Int,
+        metadata: FileMetadata?,
+        uploadFiles: MutableList<FileData>
+    ) {
+        val uploadData: MutableList<FileData> = ArrayList()
+        uploadData.add(
+            uploadFile(
+                isThumbnail,
+                uri,
+                localId,
+                roomId,
+                metadata
+            )
+        )
+        uploadFiles.addAll(uploadData)
+    }
     fun downloadFile(context: Context, message: Message) {
         try {
             val tmp = message.body?.fileId?.let { Tools.getFilePathUrl(it) }
@@ -319,3 +412,8 @@ object FilesHelper {
         }
     }
 }
+
+data class TempUri(
+    val uri: Uri,
+    val type: String,
+)

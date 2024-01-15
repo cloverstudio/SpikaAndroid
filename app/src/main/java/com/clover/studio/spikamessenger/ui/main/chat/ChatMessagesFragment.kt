@@ -49,10 +49,10 @@ import com.clover.studio.spikamessenger.BuildConfig
 import com.clover.studio.spikamessenger.MainApplication
 import com.clover.studio.spikamessenger.R
 import com.clover.studio.spikamessenger.data.models.FileData
-import com.clover.studio.spikamessenger.data.models.FileMetadata
 import com.clover.studio.spikamessenger.data.models.JsonMessage
 import com.clover.studio.spikamessenger.data.models.entity.Message
 import com.clover.studio.spikamessenger.data.models.entity.MessageAndRecords
+import com.clover.studio.spikamessenger.data.models.entity.MessageBody
 import com.clover.studio.spikamessenger.data.models.entity.MessageRecords
 import com.clover.studio.spikamessenger.data.models.entity.User
 import com.clover.studio.spikamessenger.data.models.junction.RoomWithUsers
@@ -78,7 +78,10 @@ import com.clover.studio.spikamessenger.utils.helpers.ColorHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper.downloadFile
 import com.clover.studio.spikamessenger.utils.helpers.MessageHelper
+import com.clover.studio.spikamessenger.utils.helpers.FilesHelper.getUniqueRandomId
+import com.clover.studio.spikamessenger.utils.helpers.MediaHelper
 import com.clover.studio.spikamessenger.utils.helpers.Resource
+import com.clover.studio.spikamessenger.utils.helpers.TempUri
 import com.clover.studio.spikamessenger.utils.helpers.UploadService
 import com.giphy.sdk.core.models.Media
 import com.giphy.sdk.ui.GPHContentType
@@ -103,11 +106,6 @@ private const val MIN_HEIGHT_DIFF = 150
 private const val ROTATION_ON = 45f
 private const val ROTATION_OFF = 0f
 private const val NEW_MESSAGE_ANIMATION_DURATION = 300L
-
-data class TempUri(
-    val uri: Uri,
-    val type: String,
-)
 
 @AndroidEntryPoint
 class ChatMessagesFragment : BaseFragment(), ServiceConnection {
@@ -1180,7 +1178,11 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             }
 
             override fun actionForward() {
-                val forwardBottomSheet = ForwardBottomSheet(context = requireContext(), localUserId)
+                val forwardBottomSheet = ForwardBottomSheet(
+                    context = requireContext(),
+                    localId = localUserId,
+                    title = getString(R.string.forward_messages)
+                )
                 forwardBottomSheet.setForwardListener(object :
                     ForwardBottomSheet.BottomSheetForwardAction {
                     override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
@@ -1486,6 +1488,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
         }
     }
 
+    // Main
     private fun createTempTextMessage() {
         val tempMessage = roomWithUsers?.let {
             MessageHelper.createTempTextMessage(
@@ -1501,6 +1504,35 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             unsentMessages.add(0, tempMessage)
             viewModel.storeMessageLocally(tempMessage)
         }
+    }
+
+    // Share
+    private fun createTempTextMessageShare() {
+        val messageBody =
+            MessageBody(
+                referenceMessage = null,
+                text = bindingSetup.etMessage.text.toString().trim(),
+                fileId = 1,
+                thumbId = 1,
+                file = null,
+                thumb = null,
+                subjectId = null,
+                objectIds = null,
+                type = "",
+                objects = null,
+                subject = ""
+            )
+
+        val tempMessage = Tools.createTemporaryMessage(
+            id = getUniqueRandomId(unsentMessages),
+            localUserId = localUserId,
+            roomId = roomWithUsers!!.room.roomId,
+            messageType = Const.JsonFields.TEXT_TYPE,
+            messageBody = messageBody
+        )
+
+        unsentMessages.add(0, tempMessage)
+        viewModel.storeMessageLocally(tempMessage)
     }
 
     /** Files uploading */

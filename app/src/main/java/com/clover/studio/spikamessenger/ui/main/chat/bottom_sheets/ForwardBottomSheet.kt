@@ -27,6 +27,7 @@ import timber.log.Timber
 class ForwardBottomSheet(
     private val context: Context,
     private val localId: Int,
+    private val title: String,
 ) :
     BottomSheetDialogFragment() {
 
@@ -217,6 +218,8 @@ class ForwardBottomSheet(
     }
 
     private fun initializeViews() = with(binding) {
+        tvTitle.text = title
+
         btnContacts.setOnClickListener {
             btnContacts.backgroundTintList =
                 ColorStateList.valueOf(ColorHelper.getPrimaryColor(context))

@@ -187,11 +187,11 @@ object Tools {
     }
 
     @Throws(IOException::class)
-    fun createImageFile(activity: Activity?): File {
+    fun createImageFile(context: Context): File {
         // Create an image file name
         val timeStamp: String =
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir: File? = activity?.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile(
             "JPEG_${timeStamp}_", /* prefix */
             ".jpg", /* suffix */
@@ -199,8 +199,8 @@ object Tools {
         )
     }
 
-    fun convertBitmapToUri(activity: Activity, bitmap: Bitmap): Uri {
-        val file = createImageFile(activity)
+    fun convertBitmapToUri(context: Context, bitmap: Bitmap): Uri {
+        val file = createImageFile(context)
 
         val bos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100 /*ignored for PNG*/, bos)
@@ -212,7 +212,7 @@ object Tools {
         fos.close()
 
         return FileProvider.getUriForFile(
-            activity,
+            context,
             BuildConfig.APPLICATION_ID + ".fileprovider",
             file
         )

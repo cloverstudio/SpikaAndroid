@@ -204,6 +204,7 @@
     <string name="forward">Forward</string>
     <string name="forwarded">forwarded</string>
     <string name="forward_messages">Forward messages</string>
+    <string name="share_message">Share message</string>
     <string name="copy">Copy</string>
     <string name="edit">Edit</string>
     <string name="details">Details</string>
