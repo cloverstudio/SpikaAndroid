@@ -61,7 +61,7 @@ import com.clover.studio.spikamessenger.databinding.FragmentChatMessagesBinding
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.CustomReactionBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.DetailsBottomSheet
-import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ForwardBottomSheet
+import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatSelectorBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.MediaBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ReactionsBottomSheet
 import com.clover.studio.spikamessenger.ui.main.startMainActivity
@@ -169,6 +169,8 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     private var giphyDialog: GiphyDialogFragment? = null
 
     private var navOptionsBuilder: NavOptions? = null
+
+    private var bound = false
 
     private val chooseFileContract =
         registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
@@ -1178,13 +1180,13 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             }
 
             override fun actionForward() {
-                val forwardBottomSheet = ForwardBottomSheet(
+                val chatSelectorBottomSheet = ChatSelectorBottomSheet(
                     context = requireContext(),
                     localId = localUserId,
                     title = getString(R.string.forward_messages)
                 )
-                forwardBottomSheet.setForwardListener(object :
-                    ForwardBottomSheet.BottomSheetForwardAction {
+                chatSelectorBottomSheet.setForwardListener(object :
+                    ChatSelectorBottomSheet.BottomSheetForwardAction {
                     override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
                         val jsonObject = JsonObject()
 
@@ -1211,9 +1213,9 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
                         viewModel.forwardMessage(jsonObject, roomIds.size == 1 || userIds.size == 1)
                     }
                 })
-                forwardBottomSheet.show(
+                chatSelectorBottomSheet.show(
                     requireActivity().supportFragmentManager,
-                    ForwardBottomSheet.TAG
+                    ChatSelectorBottomSheet.TAG
                 )
             }
 

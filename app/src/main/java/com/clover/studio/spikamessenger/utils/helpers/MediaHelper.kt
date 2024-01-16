@@ -24,9 +24,6 @@ object MediaHelper {
         thumbnailUris: MutableList<Uri>,
         currentMediaLocation: MutableList<Uri>
     ) {
-
-
-
         val thumbnailUri: Uri
         val fileUri: Uri
 

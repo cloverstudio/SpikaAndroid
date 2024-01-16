@@ -22,7 +22,7 @@ import com.clover.studio.spikamessenger.data.models.FileData
 import com.clover.studio.spikamessenger.data.models.entity.Message
 import com.clover.studio.spikamessenger.databinding.ActivityMainBinding
 import com.clover.studio.spikamessenger.ui.main.chat.ChatViewModel
-import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ForwardBottomSheet
+import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatSelectorBottomSheet
 import com.clover.studio.spikamessenger.ui.onboarding.startOnboardingActivity
 import com.clover.studio.spikamessenger.utils.AppPermissions
 import com.clover.studio.spikamessenger.utils.AppPermissions.notificationPermission
@@ -90,74 +90,101 @@ class MainActivity : BaseActivity() {
         sendPushTokenToServer()
         startPhonebookService()
 
-        if (Intent.ACTION_SEND == intent.action && intent != null) {
-            handleReceivedData(intent)
+        if ((Intent.ACTION_SEND == intent.action) && intent != null) {
+            val uri = intent?.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+            if (uri != null) handleReceivedData(intent, uri, arrayListOf())
+        } else if (Intent.ACTION_SEND_MULTIPLE == intent.action && intent != null) {
+            val multipleUri = intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)
+            handleReceivedData(intent, null, multipleUri)
         }
     }
 
-    private fun handleReceivedData(intent: Intent?) {
-        val uri = intent?.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
-        Timber.d("Intent::::: $intent")
-
-        if (uri != null) {
-            if (Const.JsonFields.TEXT_PREFIX == intent.type) {
-                // TODO Handle text being sent
-
-            } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true ||
-                intent.type?.startsWith(Const.JsonFields.VIDEO_PREFIX) == true
-            ) {
-                // Sending single image
-                val fileMimeType = Tools.getFileMimeType(applicationContext, uri)
-                if ((fileMimeType?.contains(Const.JsonFields.IMAGE_TYPE) == true ||
-                            fileMimeType?.contains(Const.JsonFields.VIDEO_TYPE) == true) &&
-                    !Tools.forbiddenMimeTypes(fileMimeType)
-                ) {
-                    MediaHelper.convertMedia(
-                        context = applicationContext,
-                        uri = uri,
-                        fileMimeType = Tools.getFileMimeType(applicationContext, uri),
-                        tempFilesToCreate = tempFilesToCreate,
-                        uriPairList = uriPairList,
-                        thumbnailUris = thumbnailUris,
-                        currentMediaLocation = currentMediaLocation
-                    )
+    private fun handleReceivedData(intent: Intent, uri: Uri?, multipleUri: ArrayList<Parcelable>?) {
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                if (uri != null){
+                    if (Const.JsonFields.TEXT_PREFIX == intent.type) {
+                        // TODO Handle text being sent
+                    } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true ||
+                        intent.type?.startsWith(Const.JsonFields.VIDEO_PREFIX) == true
+                    ) {
+                        // Sending single image
+                        val fileMimeType = uri.let { Tools.getFileMimeType(applicationContext, it) }
+                        if ((fileMimeType?.contains(Const.JsonFields.IMAGE_TYPE) == true ||
+                                    fileMimeType?.contains(Const.JsonFields.VIDEO_TYPE) == true) &&
+                            !Tools.forbiddenMimeTypes(fileMimeType)
+                        ) {
+                            MediaHelper.convertMedia(
+                                context = applicationContext,
+                                uri = uri,
+                                fileMimeType = Tools.getFileMimeType(applicationContext, uri),
+                                tempFilesToCreate = tempFilesToCreate,
+                                uriPairList = uriPairList,
+                                thumbnailUris = thumbnailUris,
+                                currentMediaLocation = currentMediaLocation
+                            )
+                        }
+                    } else if (intent.type?.startsWith(Const.JsonFields.FILE_PREFIX) == true) {
+                        // Sending single file
+                        filesSelected.add(uri)
+                        tempFilesToCreate.add(TempUri(uri, Const.JsonFields.FILE_TYPE))
+                    }
                 }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                if (multipleUri != null){
+                    Timber.d("Multiple uris: $multipleUri")
+                    multipleUri.forEach {
+                        it as Uri
+                        Timber.d("It:::::: $it")
+                        MediaHelper.convertMedia(
+                            context = applicationContext,
+                            uri = it,
+                            fileMimeType = Tools.getFileMimeType(applicationContext, it),
+                            tempFilesToCreate = tempFilesToCreate,
+                            uriPairList = uriPairList,
+                            thumbnailUris = thumbnailUris,
+                            currentMediaLocation = currentMediaLocation
+                        )
 
-                Timber.d("Done converting")
-                Timber.d("Temp files to create: $tempFilesToCreate")
-
-            } else if (intent.type?.startsWith(Const.JsonFields.FILE_PREFIX) == true) {
-                // Handle single image being sent
-                filesSelected.add(uri)
-                tempFilesToCreate.add(TempUri(uri, Const.JsonFields.FILE_TYPE))
-            } else {
+                    }
+                }
+            }
+            else -> {
                 Timber.d("Error")
             }
+        }
 
-            val forwardBottomSheet =
-                viewModel.getLocalUserId()?.let {
-                    ForwardBottomSheet(
-                        context = this,
-                        localId = it,
-                        title = getString(R.string.share_message)
-                    )
-                }
-            forwardBottomSheet?.setForwardListener(object :
-                ForwardBottomSheet.BottomSheetForwardAction {
-                override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
+        val chatSelectorBottomSheet =
+            viewModel.getLocalUserId()?.let {
+                ChatSelectorBottomSheet(
+                    context = this,
+                    localId = it,
+                    title = getString(R.string.share_message)
+                )
+            }
 
+        chatSelectorBottomSheet?.setForwardListener(object :
+            ChatSelectorBottomSheet.BottomSheetForwardAction {
+            override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
+
+                if (roomIds.isEmpty()){
+                    // TODO make new rooms with userIds
+                    Timber.d("Empty list")
+
+                } else {
                     sendFile(roomIds)
                     Timber.d("Upload files: $uploadFiles")
                     startUploadService(uploadFiles)
-
-                    uploadFiles.clear()
                 }
-            })
-            forwardBottomSheet?.show(
-                this.supportFragmentManager,
-                ForwardBottomSheet.TAG
-            )
-        }
+                uploadFiles.clear()
+            }
+        })
+
+        chatSelectorBottomSheet?.show(
+            this.supportFragmentManager,
+            ChatSelectorBottomSheet.TAG
+        )
     }
 
     private fun sendFile(roomIds: ArrayList<Int>) {
@@ -341,7 +368,6 @@ class MainActivity : BaseActivity() {
         }
     }
 
-
     override fun onStart() {
         super.onStart()
         Timber.d("First SSE launch = ${viewModel.checkIfFirstSSELaunch()}")
@@ -363,8 +389,12 @@ class MainActivity : BaseActivity() {
         super.onNewIntent(intent)
 
         // Handle the new intent when the activity is already running
-        if (intent?.action == Intent.ACTION_SEND && intent.type != null) {
-            handleReceivedData(intent)
+        if (Intent.ACTION_SEND == intent?.action) {
+            val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+            if (uri != null) handleReceivedData(intent, uri, arrayListOf())
+        } else if (Intent.ACTION_SEND_MULTIPLE == intent?.action) {
+            val multipleUri = intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)
+            handleReceivedData(intent, null, multipleUri)
         }
     }
 

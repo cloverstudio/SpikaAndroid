@@ -24,7 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import timber.log.Timber
 
-class ForwardBottomSheet(
+class ChatSelectorBottomSheet(
     private val context: Context,
     private val localId: Int,
     private val title: String,

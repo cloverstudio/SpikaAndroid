@@ -60,7 +60,11 @@ class UploadService : Service() {
     }
 
     fun setCallbackListener(listener: FileUploadCallback) {
-        callbackListener = listener
+        this.callbackListener = listener
+    }
+
+    fun removeCallbackListener() {
+        this.callbackListener = null
     }
 
     private fun updateProgress(progress: Int, maxProgress: Int, localId: String) {
