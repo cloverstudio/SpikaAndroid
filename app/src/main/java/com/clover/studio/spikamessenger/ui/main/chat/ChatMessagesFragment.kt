@@ -170,8 +170,6 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
 
     private var navOptionsBuilder: NavOptions? = null
 
-    private var bound = false
-
     private val chooseFileContract =
         registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
             if (!it.isNullOrEmpty()) {

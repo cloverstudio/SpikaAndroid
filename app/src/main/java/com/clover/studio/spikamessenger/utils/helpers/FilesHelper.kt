@@ -305,6 +305,7 @@ object FilesHelper {
     fun sendFiles(
         unsentMessages: List<Message>,
         uploadFiles: MutableList<FileData>,
+        temporaryMessages: MutableList<Message>,
         filesSelected: MutableList<Uri>,
         thumbnailUris: MutableList<Uri>,
         currentMediaLocation: MutableList<Uri>,
@@ -317,17 +318,16 @@ object FilesHelper {
         Timber.d("currentMediaLocation message :$currentMediaLocation")
         Timber.d("roomId message :$roomId")
 
-
-        if (unsentMessages.isNotEmpty()) {
-            for (unsentMessage in unsentMessages) {
-                when (unsentMessage.type) {
+        if (temporaryMessages.isNotEmpty()) {
+            for (temporaryMessage in temporaryMessages) {
+                when (temporaryMessage.type) {
                     Const.JsonFields.IMAGE_TYPE, Const.JsonFields.VIDEO_TYPE -> {
                         // Send thumbnail
                         uploadFiles(
                             isThumbnail = true,
                             uri = thumbnailUris.first(),
-                            localId = unsentMessage.localId!!,
-                            metadata = unsentMessage.body?.file?.metaData,
+                            localId = temporaryMessage.localId!!,
+                            metadata = temporaryMessage.body?.file?.metaData,
                             uploadFiles = uploadFiles,
                             roomId = roomId
                         )
@@ -335,8 +335,8 @@ object FilesHelper {
                         uploadFiles(
                             isThumbnail = false,
                             uri = currentMediaLocation.first(),
-                            localId = unsentMessage.localId,
-                            metadata = unsentMessage.body?.file?.metaData,
+                            localId = temporaryMessage.localId,
+                            metadata = temporaryMessage.body?.file?.metaData,
                             roomId = roomId,
                             uploadFiles = uploadFiles
                         )
@@ -349,7 +349,7 @@ object FilesHelper {
                         uploadFiles(
                             isThumbnail = false,
                             uri = filesSelected.first(),
-                            localId = unsentMessage.localId!!,
+                            localId = temporaryMessage.localId!!,
                             metadata = null,
                             roomId = roomId,
                             uploadFiles = uploadFiles
@@ -358,6 +358,7 @@ object FilesHelper {
                     }
                 }
             }
+            temporaryMessages.clear()
         }
     }
 

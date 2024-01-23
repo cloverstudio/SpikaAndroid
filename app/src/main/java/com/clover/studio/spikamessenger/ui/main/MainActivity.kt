@@ -200,11 +200,12 @@ class MainActivity : BaseActivity() {
 
             // Crash
             FilesHelper.sendFiles(
-                unsentMessages,
-                uploadFiles,
-                filesSelected,
-                thumbnailUris,
-                currentMediaLocation,
+                unsentMessages = unsentMessages,
+                uploadFiles = uploadFiles,
+                temporaryMessages = mutableListOf(),
+                filesSelected = filesSelected,
+                thumbnailUris =thumbnailUris,
+                currentMediaLocation = currentMediaLocation,
                 roomId = roomIds.first()
             )
         }
