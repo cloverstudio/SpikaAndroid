@@ -291,6 +291,22 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     private fun initViews() = with(bindingSetup) {
         directory = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 
+        if (roomWithUsers?.room?.name == "Check in/out"){
+            clSendingArea.visibility = View.INVISIBLE
+            llCheckIn.visibility = View.VISIBLE
+            btnCheckIn.setOnClickListener {
+                createTempTextMessage("ci")
+                sendMessage("ci")
+            }
+            btnCheckOut.setOnClickListener {
+                createTempTextMessage("co")
+                sendMessage("co")
+            }
+        } else {
+            clSendingArea.visibility = View.VISIBLE
+            llCheckIn.visibility = View.GONE
+        }
+
         clRoomExit.visibility =
             if (roomWithUsers?.room?.roomExit == true || roomWithUsers?.room?.deleted == true) {
                 View.VISIBLE
@@ -441,8 +457,8 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
         ivButtonSend.setOnClickListener {
             vTransparent.visibility = View.GONE
             if (etMessage.text?.trim().toString().isNotEmpty()) {
-                createTempTextMessage()
-                sendMessage()
+                createTempTextMessage(null)
+                sendMessage(null)
             }
             etMessage.setText("")
             hideSendButton()
@@ -1314,10 +1330,10 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
         }
     }
 
-    private fun sendMessage() {
+    private fun sendMessage(text: String?) {
         try {
             sendMessage(
-                text = bindingSetup.etMessage.text.toString().trim(),
+                text = text ?: bindingSetup.etMessage.text.toString().trim(),
                 localId = unsentMessages.first().localId!!,
             )
         } catch (e: Exception) {
@@ -1326,7 +1342,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     }
 
     private fun sendMessage(
-        text: String,
+        text: String?,
         localId: String,
     ) {
         val jsonMessage = JsonMessage(
@@ -1348,11 +1364,11 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
         }
     }
 
-    private fun createTempTextMessage() {
+    private fun createTempTextMessage(text: String?) {
         val messageBody =
             MessageBody(
                 referenceMessage = null,
-                text = bindingSetup.etMessage.text.toString().trim(),
+                text =  text ?: bindingSetup.etMessage.text.toString().trim(),
                 fileId = 1,
                 thumbId = 1,
                 file = null,
