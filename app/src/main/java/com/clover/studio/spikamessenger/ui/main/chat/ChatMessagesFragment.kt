@@ -45,23 +45,21 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.clover.studio.spikamessenger.BuildConfig
 import com.clover.studio.spikamessenger.MainApplication
 import com.clover.studio.spikamessenger.R
 import com.clover.studio.spikamessenger.data.models.FileData
 import com.clover.studio.spikamessenger.data.models.JsonMessage
 import com.clover.studio.spikamessenger.data.models.entity.Message
 import com.clover.studio.spikamessenger.data.models.entity.MessageAndRecords
-import com.clover.studio.spikamessenger.data.models.entity.MessageBody
 import com.clover.studio.spikamessenger.data.models.entity.MessageRecords
 import com.clover.studio.spikamessenger.data.models.entity.User
 import com.clover.studio.spikamessenger.data.models.junction.RoomWithUsers
 import com.clover.studio.spikamessenger.data.models.networking.responses.ThumbnailData
 import com.clover.studio.spikamessenger.databinding.FragmentChatMessagesBinding
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatBottomSheet
+import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatSelectorBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.CustomReactionBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.DetailsBottomSheet
-import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ChatSelectorBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.MediaBottomSheet
 import com.clover.studio.spikamessenger.ui.main.chat.bottom_sheets.ReactionsBottomSheet
 import com.clover.studio.spikamessenger.ui.main.startMainActivity
@@ -77,9 +75,8 @@ import com.clover.studio.spikamessenger.utils.extendables.DialogInteraction
 import com.clover.studio.spikamessenger.utils.helpers.ColorHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper.downloadFile
-import com.clover.studio.spikamessenger.utils.helpers.MessageHelper
-import com.clover.studio.spikamessenger.utils.helpers.FilesHelper.getUniqueRandomId
 import com.clover.studio.spikamessenger.utils.helpers.MediaHelper
+import com.clover.studio.spikamessenger.utils.helpers.MessageHelper
 import com.clover.studio.spikamessenger.utils.helpers.Resource
 import com.clover.studio.spikamessenger.utils.helpers.TempUri
 import com.clover.studio.spikamessenger.utils.helpers.UploadService
@@ -1504,35 +1501,6 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             unsentMessages.add(0, tempMessage)
             viewModel.storeMessageLocally(tempMessage)
         }
-    }
-
-    // Share
-    private fun createTempTextMessageShare() {
-        val messageBody =
-            MessageBody(
-                referenceMessage = null,
-                text = bindingSetup.etMessage.text.toString().trim(),
-                fileId = 1,
-                thumbId = 1,
-                file = null,
-                thumb = null,
-                subjectId = null,
-                objectIds = null,
-                type = "",
-                objects = null,
-                subject = ""
-            )
-
-        val tempMessage = Tools.createTemporaryMessage(
-            id = getUniqueRandomId(unsentMessages),
-            localUserId = localUserId,
-            roomId = roomWithUsers!!.room.roomId,
-            messageType = Const.JsonFields.TEXT_TYPE,
-            messageBody = messageBody
-        )
-
-        unsentMessages.add(0, tempMessage)
-        viewModel.storeMessageLocally(tempMessage)
     }
 
     /** Files uploading */

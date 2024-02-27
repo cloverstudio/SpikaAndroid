@@ -59,7 +59,7 @@ fun startMainActivity(fromActivity: Activity) = fromActivity.apply {
 }
 
 @AndroidEntryPoint
-class MainActivity : BaseActivity() {
+class MainActivity : BaseActivity(), ServiceConnection {
 
     private val viewModel: MainViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
@@ -74,8 +74,11 @@ class MainActivity : BaseActivity() {
     private var uploadFiles: ArrayList<FileData> = ArrayList()
     private var filesSelected: MutableList<Uri> = ArrayList()
     private var unsentMessages: MutableList<Message> = ArrayList()
+    private var temporaryMessages: MutableList<Message> = mutableListOf()
 
     private var lastReceivedIntent: Intent? = null
+
+    private lateinit var fileUploadService: UploadService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +105,7 @@ class MainActivity : BaseActivity() {
     private fun handleReceivedData(intent: Intent, uri: Uri?, multipleUri: ArrayList<Parcelable>?) {
         when (intent.action) {
             Intent.ACTION_SEND -> {
-                if (uri != null){
+                if (uri != null) {
                     if (Const.JsonFields.TEXT_PREFIX == intent.type) {
                         // TODO Handle text being sent
                     } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true ||
@@ -131,8 +134,9 @@ class MainActivity : BaseActivity() {
                     }
                 }
             }
+
             Intent.ACTION_SEND_MULTIPLE -> {
-                if (multipleUri != null){
+                if (multipleUri != null) {
                     Timber.d("Multiple uris: $multipleUri")
                     multipleUri.forEach {
                         it as Uri
@@ -150,6 +154,7 @@ class MainActivity : BaseActivity() {
                     }
                 }
             }
+
             else -> {
                 Timber.d("Error")
             }
@@ -167,17 +172,15 @@ class MainActivity : BaseActivity() {
         chatSelectorBottomSheet?.setForwardListener(object :
             ChatSelectorBottomSheet.BottomSheetForwardAction {
             override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
-
-                if (roomIds.isEmpty()){
+                if (roomIds.isEmpty()) {
                     // TODO make new rooms with userIds
                     Timber.d("Empty list")
 
                 } else {
                     sendFile(roomIds)
                     Timber.d("Upload files: $uploadFiles")
-                    startUploadService(uploadFiles)
+                    startUploadService()
                 }
-                uploadFiles.clear()
             }
         })
 
@@ -189,8 +192,8 @@ class MainActivity : BaseActivity() {
 
     private fun sendFile(roomIds: ArrayList<Int>) {
         if (tempFilesToCreate.isNotEmpty()) {
-            for (tempFile in tempFilesToCreate) {
-                createTempFileMessage(tempFile.uri, tempFile.type, roomIds.first())
+            tempFilesToCreate.forEach {
+                createTempFileMessage(it.uri, it.type, roomIds.first())
             }
 
             Timber.d("Temp files: $tempFilesToCreate")
@@ -198,13 +201,12 @@ class MainActivity : BaseActivity() {
 
             Timber.d("Thumbnail uris: $thumbnailUris")
 
-            // Crash
             FilesHelper.sendFiles(
                 unsentMessages = unsentMessages,
                 uploadFiles = uploadFiles,
-                temporaryMessages = mutableListOf(),
+                temporaryMessages = temporaryMessages,
                 filesSelected = filesSelected,
-                thumbnailUris =thumbnailUris,
+                thumbnailUris = thumbnailUris,
                 currentMediaLocation = currentMediaLocation,
                 roomId = roomIds.first()
             )
@@ -224,6 +226,7 @@ class MainActivity : BaseActivity() {
 
         if (tempMessage != null) {
             Timber.d("Temp created message:$tempMessage")
+            temporaryMessages.add(tempMessage)
             unsentMessages.add(tempMessage)
             chatViewModel.storeMessageLocally(tempMessage)
         }
@@ -332,41 +335,43 @@ class MainActivity : BaseActivity() {
         })
     }
 
-    private fun startUploadService(files: ArrayList<FileData>) {
+    private fun startUploadService() {
         val intent = Intent(MainApplication.appContext, UploadService::class.java)
-        intent.putParcelableArrayListExtra(Const.IntentExtras.FILES_EXTRA, files)
         MainApplication.appContext.startService(intent)
         this.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private lateinit var fileUploadService: UploadService
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as UploadService.UploadServiceBinder
-            fileUploadService = binder.getService()
-            fileUploadService.setCallbackListener(object : UploadService.FileUploadCallback {
-                override fun updateUploadProgressBar(
-                    progress: Int,
-                    maxProgress: Int,
-                    localId: String?
-                ) {
-                    Timber.d("Uploading")
-                }
+    private val serviceConnection = this
+    override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+        val binder = service as UploadService.UploadServiceBinder
+        fileUploadService = binder.getService()
+        fileUploadService.setCallbackListener(object : UploadService.FileUploadCallback {
+            override fun updateUploadProgressBar(
+                progress: Int,
+                maxProgress: Int,
+                localId: String?
+            ) {
+                Timber.d("Uploading")
+            }
 
-                override fun uploadingFinished(uploadedFiles: MutableList<FileData>) {
-                    Timber.d("Finished")
-                    Tools.deleteTemporaryMedia(applicationContext)
-                    applicationContext?.cacheDir?.deleteRecursively()
-                    uriPairList.clear()
-                    uploadedFiles.clear()
-                    unsentMessages.clear()
-                }
-            })
-        }
+            override fun uploadingFinished(uploadedFiles: MutableList<FileData>) {
+                Tools.deleteTemporaryMedia(applicationContext)
+                applicationContext?.cacheDir?.deleteRecursively()
+                uriPairList.clear()
+                uploadedFiles.clear()
+                unsentMessages.clear()
+            }
+        })
 
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Timber.d("Service disconnected")
+        CoroutineScope(Dispatchers.Default).launch {
+            Timber.d("Upload files in service: $uploadFiles")
+            fileUploadService.uploadItems(uploadFiles)
+            uploadFiles.clear()
         }
+    }
+
+    override fun onServiceDisconnected(name: ComponentName?) {
+        Timber.d("Service disconnected")
     }
 
     override fun onStart() {
