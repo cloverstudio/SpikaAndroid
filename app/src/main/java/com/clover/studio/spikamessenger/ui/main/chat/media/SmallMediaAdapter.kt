@@ -65,7 +65,7 @@ class SmallMediaAdapter(
                             override fun onLoadFailed(
                                 e: GlideException?,
                                 model: Any?,
-                                target: Target<Drawable>?,
+                                target: Target<Drawable>,
                                 isFirstResource: Boolean
                             ): Boolean {
                                 pbSmallMedia.visibility = View.GONE
@@ -73,10 +73,10 @@ class SmallMediaAdapter(
                             }
 
                             override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                dataSource: DataSource?,
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable>,
+                                dataSource: DataSource,
                                 isFirstResource: Boolean
                             ): Boolean {
                                 pbSmallMedia.visibility = View.GONE

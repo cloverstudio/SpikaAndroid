@@ -6,6 +6,7 @@ apply plugin: "kotlin-parcelize"
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
+apply plugin: 'com.google.devtools.ksp'
 
 android {
     applicationVariants.configureEach { variant ->
@@ -44,7 +45,7 @@ android {
         applicationId "com.clover.studio.spikamessenger"
         minSdk 24
         targetSdk 34
-        versionCode 121006
+        versionCode 121007
         versionName "1.2.1"
 
         kapt {
@@ -165,13 +166,13 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'com.google.firebase:firebase-messaging-ktx:23.4.0'
+    implementation 'com.google.firebase:firebase-messaging-ktx:23.4.1'
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     //Crashlytics
-    implementation platform('com.google.firebase:firebase-bom:30.0.0')
+    implementation platform('com.google.firebase:firebase-bom:32.7.4')
     implementation 'com.google.firebase:firebase-crashlytics-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'
 
@@ -190,20 +191,22 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
 
     //Kotlin Coroutines
-    def coroutines_android_version = '1.5.2'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_android_version"
+    def coroutines_core_android_version = '1.5.2'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_core_android_version"
+
+    def coroutines_android_version = '1.7.3'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_android_version"
 
     //Hilt
     implementation 'com.google.dagger:hilt-android:2.50'
-    kapt 'com.google.dagger:hilt-android-compiler:2.50'
-    kapt "androidx.hilt:hilt-compiler:1.1.0"
+    ksp 'com.google.dagger:hilt-android-compiler:2.50'
+    ksp "androidx.hilt:hilt-compiler:1.2.0"
 
     //Room
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
-    kapt "androidx.room:room-compiler:$room_version"
+    ksp "androidx.room:room-compiler:$room_version"
     androidTestImplementation "androidx.room:room-testing:$room_version"
 
     //Navigation
@@ -212,10 +215,10 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
 
     //Glide
-    def glide_version = "4.13.0"
+    def glide_version = "4.16.0"
     implementation "com.github.bumptech.glide:glide:$glide_version"
     implementation "com.github.bumptech.glide:annotations:$glide_version"
-    kapt "com.github.bumptech.glide:compiler:$glide_version"
+    ksp "com.github.bumptech.glide:ksp:$glide_version"
 
     //Timber
     implementation 'com.jakewharton.timber:timber:5.0.1'
@@ -224,8 +227,8 @@ dependencies {
     implementation 'com.googlecode.libphonenumber:libphonenumber:8.12.41'
 
     // SmsVerificationAPI
-    implementation 'com.google.android.gms:play-services-auth:20.7.0'
-    implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.1'
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
+    implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.2'
 
     // Emoji
     def emojiVersion = "0.15.0"
@@ -235,12 +238,10 @@ dependencies {
     implementation 'com.github.MikeOrtiz:TouchImageView:1.4.1'
 
     // Exo Player
-    def mediaVersion = "1.2.1"
-    dependencies {
-        implementation "androidx.media3:media3-exoplayer:$mediaVersion"
-        implementation "androidx.media3:media3-ui:$mediaVersion"
-        implementation "androidx.media3:media3-exoplayer-dash:$mediaVersion"
-    }
+    def mediaVersion = "1.3.0"
+    implementation "androidx.media3:media3-exoplayer:$mediaVersion"
+    implementation "androidx.media3:media3-ui:$mediaVersion"
+    implementation "androidx.media3:media3-exoplayer-dash:$mediaVersion"
 
     // Markdown
     implementation "io.noties.markwon:core:4.6.2"

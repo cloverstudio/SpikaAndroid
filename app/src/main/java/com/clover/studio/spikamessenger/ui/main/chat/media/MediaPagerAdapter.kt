@@ -109,7 +109,7 @@ class MediaPagerAdapter(
                 override fun onLoadFailed(
                     e: GlideException?,
                     model: Any?,
-                    target: Target<Drawable>?,
+                    target: Target<Drawable>,
                     isFirstResource: Boolean
                 ): Boolean {
                     pbMediaImage.visibility = View.GONE
@@ -117,10 +117,10 @@ class MediaPagerAdapter(
                 }
 
                 override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
+                    resource: Drawable,
+                    model: Any,
                     target: Target<Drawable>?,
-                    dataSource: DataSource?,
+                    dataSource: DataSource,
                     isFirstResource: Boolean
                 ): Boolean {
                     pbMediaImage.visibility = View.GONE

@@ -92,7 +92,7 @@ object ChatAdapterHelper {
                 override fun onLoadFailed(
                     e: GlideException?,
                     model: Any?,
-                    target: Target<Drawable>?,
+                    target: Target<Drawable>,
                     isFirstResource: Boolean
                 ): Boolean {
                     Timber.d("Load Failed")
@@ -100,10 +100,10 @@ object ChatAdapterHelper {
                 }
 
                 override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    dataSource: DataSource?,
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>,
+                    dataSource: DataSource,
                     isFirstResource: Boolean
                 ): Boolean {
                     loadingImage?.visibility = View.GONE
