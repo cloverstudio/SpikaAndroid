@@ -45,12 +45,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 
 
 fun startMainActivity(fromActivity: Activity) = fromActivity.apply {
@@ -108,14 +103,15 @@ class MainActivity : BaseActivity(), ServiceConnection {
                 if (uri != null) {
                     if (Const.JsonFields.TEXT_PREFIX == intent.type) {
                         // TODO Handle text being sent
-                    } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true ||
-                        intent.type?.startsWith(Const.JsonFields.VIDEO_PREFIX) == true
+                    } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true || intent.type?.startsWith(
+                            Const.JsonFields.VIDEO_PREFIX
+                        ) == true
                     ) {
                         // Sending single image
                         val fileMimeType = uri.let { Tools.getFileMimeType(applicationContext, it) }
-                        if ((fileMimeType?.contains(Const.JsonFields.IMAGE_TYPE) == true ||
-                                    fileMimeType?.contains(Const.JsonFields.VIDEO_TYPE) == true) &&
-                            !Tools.forbiddenMimeTypes(fileMimeType)
+                        if ((fileMimeType.contains(Const.JsonFields.IMAGE_TYPE) || fileMimeType.contains(
+                                Const.JsonFields.VIDEO_TYPE
+                            )) && !Tools.forbiddenMimeTypes(fileMimeType)
                         ) {
                             MediaHelper.convertMedia(
                                 context = applicationContext,
@@ -160,14 +156,11 @@ class MainActivity : BaseActivity(), ServiceConnection {
             }
         }
 
-        val chatSelectorBottomSheet =
-            viewModel.getLocalUserId()?.let {
-                ChatSelectorBottomSheet(
-                    context = this,
-                    localId = it,
-                    title = getString(R.string.share_message)
-                )
-            }
+        val chatSelectorBottomSheet = viewModel.getLocalUserId()?.let {
+            ChatSelectorBottomSheet(
+                context = this, localId = it, title = getString(R.string.share_message)
+            )
+        }
 
         chatSelectorBottomSheet?.setForwardListener(object :
             ChatSelectorBottomSheet.BottomSheetForwardAction {
@@ -185,8 +178,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
         })
 
         chatSelectorBottomSheet?.show(
-            this.supportFragmentManager,
-            ChatSelectorBottomSheet.TAG
+            this.supportFragmentManager, ChatSelectorBottomSheet.TAG
         )
     }
 
@@ -234,8 +226,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
 
     private fun startPhonebookService() {
         if (ContextCompat.checkSelfPermission(
-                this@MainActivity,
-                Manifest.permission.READ_CONTACTS
+                this@MainActivity, Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             Timber.d("Starting phonebook service")
@@ -248,8 +239,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
         viewModel.newMessageReceivedListener.observe(this, EventObserver { message ->
             message.responseData?.roomId?.let {
                 viewModel.getRoomWithUsers(
-                    it,
-                    message.responseData
+                    it, message.responseData
                 )
             }
         })
@@ -299,10 +289,8 @@ class MainActivity : BaseActivity(), ServiceConnection {
                 }
             }
 
-        if (
-            ContextCompat.checkSelfPermission(
-                this@MainActivity,
-                Manifest.permission.READ_CONTACTS
+        if (ContextCompat.checkSelfPermission(
+                this@MainActivity, Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             // ignore
@@ -347,9 +335,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
         fileUploadService = binder.getService()
         fileUploadService.setCallbackListener(object : UploadService.FileUploadCallback {
             override fun updateUploadProgressBar(
-                progress: Int,
-                maxProgress: Int,
-                localId: String?
+                progress: Int, maxProgress: Int, localId: String?
             ) {
                 Timber.d("Uploading")
             }

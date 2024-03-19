@@ -136,6 +136,11 @@ interface RetrofitService {
         @Body jsonObject: JsonObject
     ): Response<ForwardMessagesResponse>
 
-    // TODO add remaining block API
+    @POST(Const.Networking.API_SHARE_MEDIA)
+    suspend fun shareMedia(
+        @HeaderMap headers: Map<String, String?>,
+        @Body jsonObject: JsonObject,
+    ): Response<ShareMediaResponse>
+
     // End block section
 }

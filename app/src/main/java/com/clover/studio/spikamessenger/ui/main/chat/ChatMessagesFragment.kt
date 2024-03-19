@@ -45,9 +45,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.clover.studio.spikamessenger.BuildConfig
 import com.clover.studio.spikamessenger.MainApplication
 import com.clover.studio.spikamessenger.R
 import com.clover.studio.spikamessenger.data.models.FileData
+import com.clover.studio.spikamessenger.data.models.FileMetadata
 import com.clover.studio.spikamessenger.data.models.JsonMessage
 import com.clover.studio.spikamessenger.data.models.entity.Message
 import com.clover.studio.spikamessenger.data.models.entity.MessageAndRecords
@@ -75,7 +77,6 @@ import com.clover.studio.spikamessenger.utils.extendables.DialogInteraction
 import com.clover.studio.spikamessenger.utils.helpers.ColorHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper
 import com.clover.studio.spikamessenger.utils.helpers.FilesHelper.downloadFile
-import com.clover.studio.spikamessenger.utils.helpers.MediaHelper
 import com.clover.studio.spikamessenger.utils.helpers.MessageHelper
 import com.clover.studio.spikamessenger.utils.helpers.Resource
 import com.clover.studio.spikamessenger.utils.helpers.TempUri
@@ -1564,7 +1565,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
                     uri = uri
                 )
                 thumbnailUri = Tools.convertBitmapToUri(
-                    activity = requireActivity(),
+                    context = requireActivity(),
                     bitmap = thumbnail
                 )
                 tempFilesToCreate.add(TempUri(thumbnailUri, Const.JsonFields.VIDEO_TYPE))
@@ -1580,7 +1581,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             )
             if (bitmap != null) {
                 fileUri = Tools.convertBitmapToUri(
-                    activity = requireActivity(),
+                    context = requireActivity(),
                     bitmap = bitmap
                 )
 
@@ -1593,7 +1594,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
 
                 thumbnail?.let {
                     thumbnailUri = Tools.convertBitmapToUri(
-                        activity = requireActivity(),
+                        context = requireActivity(),
                         bitmap = thumbnail
                     )
 

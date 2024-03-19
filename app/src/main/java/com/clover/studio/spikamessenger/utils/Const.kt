@@ -233,6 +233,9 @@ class Const {
             const val API_DELETE_BLOCK_FOR_USER = "api/messenger/blocks/userId/{userId}"
             const val API_SETTINGS = "api/messenger/settings"
 
+            // Share
+            const val API_SHARE_MEDIA = "api/messenger/messages/share"
+
             // Queries
             const val ROOM_ID = "roomId"
             const val CONTACTS = "contacts"

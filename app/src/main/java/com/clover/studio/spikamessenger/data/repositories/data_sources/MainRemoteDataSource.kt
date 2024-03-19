@@ -48,6 +48,10 @@ class MainRemoteDataSource @Inject constructor(
         retrofitService.forwardMessages(getHeaderMap(sharedPrefs.readToken()), jsonObject)
     }
 
+    suspend fun shareMedia(jsonObject: JsonObject) = getResult {
+        retrofitService.shareMedia(getHeaderMap(sharedPrefs.readToken()), jsonObject)
+    }
+
     suspend fun getUserSettings() = getResult {
         retrofitService.getSettings(getHeaderMap(sharedPrefs.readToken()))
     }

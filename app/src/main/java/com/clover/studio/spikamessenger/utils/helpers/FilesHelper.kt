@@ -132,7 +132,7 @@ object FilesHelper {
         )
     }
 
-    private fun createTempFile(
+    fun createTempFile(
         uri: Uri,
         type: String,
         localUserId: Int,
@@ -371,15 +371,17 @@ object FilesHelper {
         uploadFiles: MutableList<FileData>
     ) {
         val uploadData: MutableList<FileData> = ArrayList()
-        uploadData.add(
-            uploadFile(
-                isThumbnail,
-                uri,
-                localId,
-                roomId,
-                metadata
+        uploadFile(
+            isThumbnail,
+            uri,
+            localId,
+            roomId,
+            metadata
+        )?.let {
+            uploadData.add(
+                it
             )
-        )
+        }
         uploadFiles.addAll(uploadData)
     }
     fun downloadFile(context: Context, message: Message) {

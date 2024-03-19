@@ -325,6 +325,10 @@ class MainViewModel @Inject constructor(
             Timber.d("App is in team mode!")
         } else Timber.d("App is in messenger mode!")
     }
+
+    fun shareMedia(jsonObject: JsonObject ) = viewModelScope.launch {
+        repository.shareMedia(jsonObject = jsonObject)
+    }
 }
 
 class RoomNotificationData(
