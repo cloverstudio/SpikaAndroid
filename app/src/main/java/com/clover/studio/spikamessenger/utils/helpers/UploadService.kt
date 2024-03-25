@@ -49,7 +49,11 @@ class UploadService : Service() {
     private var imageJobs: List<Job> = mutableListOf()
     private var filesWaiting: MutableList<FileData> = mutableListOf()
 
+    private var sharedFiles: MutableList<JsonObject> = mutableListOf()
+
     private val jobMap: MutableMap<String?, Job> = mutableMapOf()
+
+    private var isSharing: Boolean = false
 
     inner class UploadServiceBinder : Binder() {
         fun getService(): UploadService = this@UploadService
@@ -72,7 +76,7 @@ class UploadService : Service() {
     }
 
     private fun uploadingFinished(uploadedFiles: MutableList<FileData>) {
-        callbackListener?.uploadingFinished(uploadedFiles)
+        callbackListener?.uploadingFinished(uploadedFiles, sharedFiles)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -103,6 +107,7 @@ class UploadService : Service() {
 
                 override fun fileUploadError(description: String) {
                     callbackListener?.uploadError(description)
+                    CoroutineScope(Dispatchers.IO).launch { resetUpload() }
                 }
 
                 override fun fileUploadVerified(
@@ -142,7 +147,8 @@ class UploadService : Service() {
             })
     }
 
-    suspend fun uploadItems(items: List<FileData>) {
+    suspend fun uploadItems(items: List<FileData>, isSharing: Boolean = false) {
+        this.isSharing = isSharing
         if (thumbnailJobs.isNotEmpty() || imageJobs.isNotEmpty()) {
             filesWaiting.addAll(items)
             return
@@ -198,6 +204,7 @@ class UploadService : Service() {
             return
         }
 
+        isSharing = false
         uploadingFinished(uploadedFiles)
         uploadedFiles.clear()
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -246,6 +253,7 @@ class UploadService : Service() {
                         thumbId = fileThumbId ?: messageBody.thumbId!!,
                         roomId = item.roomId,
                         localId = item.localId!!,
+                        isSharing = isSharing
                     )
                     uploadedFiles.find { it.localId == item.localId && !it.isThumbnail }?.messageStatus =
                         Resource.Status.SUCCESS
@@ -272,6 +280,7 @@ class UploadService : Service() {
         thumbId: Long,
         roomId: Int,
         localId: String,
+        isSharing: Boolean
     ) {
         val jsonMessage = JsonMessage(
             msgText = text,
@@ -284,14 +293,23 @@ class UploadService : Service() {
         )
 
         val jsonObject = jsonMessage.messageToJson()
-        CoroutineScope(Dispatchers.Default).launch {
-            chatRepositoryImpl.sendMessage(jsonObject)
+        if (isSharing) {
+            sharedFiles.add(jsonObject)
+        } else {
+            CoroutineScope(Dispatchers.IO).launch {
+                mainRepositoryImpl.shareMedia(jsonObject)
+            }
         }
     }
 
     interface FileUploadCallback {
         fun updateUploadProgressBar(progress: Int, maxProgress: Int, localId: String?) {}
-        fun uploadingFinished(uploadedFiles: MutableList<FileData>) {}
+        fun uploadingFinished(
+            uploadedFiles: MutableList<FileData>,
+            sharedFiles: MutableList<JsonObject>
+        ) {
+        }
+
         fun uploadError(description: String) {}
         fun avatarUploadFinished(fileId: Long) {}
     }

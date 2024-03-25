@@ -155,6 +155,7 @@ class Const {
             const val GROUP = "group"
             const val BODY = "body"
             const val MESSAGE_IDS = "messageIds"
+            const val MESSAGES = "messages"
             const val REACTION = "reaction"
             const val THUMBNAIL_DATA = "thumbnailData"
 

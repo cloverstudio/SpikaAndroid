@@ -40,6 +40,7 @@ import com.clover.studio.spikamessenger.utils.helpers.TempUri
 import com.clover.studio.spikamessenger.utils.helpers.UploadService
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -162,18 +163,18 @@ class MainActivity : BaseActivity(), ServiceConnection {
             )
         }
 
-        chatSelectorBottomSheet?.setForwardListener(object :
+        chatSelectorBottomSheet?.setForwardShareListener(object :
             ChatSelectorBottomSheet.BottomSheetForwardAction {
-            override fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
-                if (roomIds.isEmpty()) {
-                    // TODO make new rooms with userIds
-                    Timber.d("Empty list")
+            override fun forwardShare(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
 
-                } else {
-                    sendFile(roomIds)
-                    Timber.d("Upload files: $uploadFiles")
-                    startUploadService()
-                }
+                Timber.d("Room ids: $roomIds, userIds: $userIds ")
+
+                viewModel.shareRoomId.addAll(roomIds)
+                viewModel.shareUserId.addAll(userIds)
+
+                sendFile()
+                Timber.d("Upload files: $uploadFiles")
+                startUploadService()
             }
         })
 
@@ -182,10 +183,11 @@ class MainActivity : BaseActivity(), ServiceConnection {
         )
     }
 
-    private fun sendFile(roomIds: ArrayList<Int>) {
+    // TODO we need to implement room id for temp messages
+    private fun sendFile() {
         if (tempFilesToCreate.isNotEmpty()) {
             tempFilesToCreate.forEach {
-                createTempFileMessage(it.uri, it.type, roomIds.first())
+                createTempFileMessage(uri = it.uri, type =  it.type, roomId =  -1)
             }
 
             Timber.d("Temp files: $tempFilesToCreate")
@@ -200,7 +202,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
                 filesSelected = filesSelected,
                 thumbnailUris = thumbnailUris,
                 currentMediaLocation = currentMediaLocation,
-                roomId = roomIds.first()
+                roomId = -1
             )
         }
     }
@@ -315,7 +317,6 @@ class MainActivity : BaseActivity(), ServiceConnection {
             // Get new FCM registration token
             val token = task.result
             val jsonObject = JsonObject()
-
             jsonObject.addProperty(Const.JsonFields.PUSH_TOKEN, token)
 
             viewModel.updatePushToken(jsonObject)
@@ -340,7 +341,13 @@ class MainActivity : BaseActivity(), ServiceConnection {
                 Timber.d("Uploading")
             }
 
-            override fun uploadingFinished(uploadedFiles: MutableList<FileData>) {
+            override fun uploadingFinished(
+                uploadedFiles: MutableList<FileData>,
+                sharedFiles: MutableList<JsonObject>
+            ) {
+                Timber.d("Shared files: $sharedFiles")
+                if (sharedFiles.isNotEmpty()) sendSharedFiles(sharedFiles = sharedFiles)
+
                 Tools.deleteTemporaryMedia(applicationContext)
                 applicationContext?.cacheDir?.deleteRecursively()
                 uriPairList.clear()
@@ -351,9 +358,39 @@ class MainActivity : BaseActivity(), ServiceConnection {
 
         CoroutineScope(Dispatchers.Default).launch {
             Timber.d("Upload files in service: $uploadFiles")
-            fileUploadService.uploadItems(uploadFiles)
+            fileUploadService.uploadItems(items = uploadFiles, isSharing = true)
             uploadFiles.clear()
         }
+    }
+
+    private fun sendSharedFiles(sharedFiles: MutableList<JsonObject>) {
+        val jsonObject = JsonObject()
+        val messages = JsonArray()
+        sharedFiles.forEach {
+            messages.add(it)
+        }
+
+        val rooms = JsonArray()
+        viewModel.shareRoomId.forEach { room ->
+            rooms.add(room)
+        }
+
+        val users = JsonArray()
+        viewModel.shareUserId.forEach { user ->
+            users.add(user)
+        }
+
+        jsonObject.add(Const.JsonFields.ROOM_IDS, rooms)
+        jsonObject.add(Const.JsonFields.USER_IDS, users)
+        jsonObject.add(Const.JsonFields.MESSAGES, messages)
+
+        Timber.d("Rooms: $rooms")
+        Timber.d("Viewmodel: ${viewModel.shareRoomId}")
+        Timber.d("Viewmodel: ${viewModel.shareUserId}")
+
+        viewModel.shareMedia(jsonObject = jsonObject)
+
+        Timber.d("Json object: $jsonObject")
     }
 
     override fun onServiceDisconnected(name: ComponentName?) {

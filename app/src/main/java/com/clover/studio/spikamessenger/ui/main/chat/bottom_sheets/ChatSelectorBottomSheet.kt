@@ -82,10 +82,10 @@ class ChatSelectorBottomSheet(
     }
 
     interface BottomSheetForwardAction {
-        fun forward(userIds: ArrayList<Int>, roomIds: ArrayList<Int>)
+        fun forwardShare(userIds: ArrayList<Int>, roomIds: ArrayList<Int>)
     }
 
-    fun setForwardListener(listener: BottomSheetForwardAction) {
+    fun setForwardShareListener(listener: BottomSheetForwardAction) {
         this.listener = listener
     }
 
@@ -287,7 +287,7 @@ class ChatSelectorBottomSheet(
                     it.roomId?.let { roomId -> roomIds.add(roomId) }
                 }
             }
-            listener?.forward(userIds, roomIds)
+            listener?.forwardShare(userIds, roomIds)
             dismiss()
         }
 

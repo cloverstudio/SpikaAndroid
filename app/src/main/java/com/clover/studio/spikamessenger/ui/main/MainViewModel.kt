@@ -63,6 +63,9 @@ class MainViewModel @Inject constructor(
     val recentGroupsListener = MutableLiveData<Event<Resource<List<RoomWithUsers>?>>>()
     val roomUsers: MutableList<PrivateGroupChats> = ArrayList()
 
+    val shareRoomId : ArrayList<Int> = arrayListOf()
+    val shareUserId : ArrayList<Int> = arrayListOf()
+
     init {
         sseManager.setupListener(this)
     }
