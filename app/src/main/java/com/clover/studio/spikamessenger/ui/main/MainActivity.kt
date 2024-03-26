@@ -72,6 +72,8 @@ class MainActivity : BaseActivity(), ServiceConnection {
     private var unsentMessages: MutableList<Message> = ArrayList()
     private var temporaryMessages: MutableList<Message> = mutableListOf()
 
+    private var text: String = ""
+
     private var lastReceivedIntent: Intent? = null
 
     private lateinit var fileUploadService: UploadService
@@ -104,6 +106,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
                 if (uri != null) {
                     if (Const.JsonFields.TEXT_PREFIX == intent.type) {
                         // TODO Handle text being sent
+                        text = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
                     } else if (intent.type?.startsWith(Const.JsonFields.IMAGE_PREFIX) == true || intent.type?.startsWith(
                             Const.JsonFields.VIDEO_PREFIX
                         ) == true
@@ -114,18 +117,9 @@ class MainActivity : BaseActivity(), ServiceConnection {
                                 Const.JsonFields.VIDEO_TYPE
                             )) && !Tools.forbiddenMimeTypes(fileMimeType)
                         ) {
-                            MediaHelper.convertMedia(
-                                context = applicationContext,
-                                uri = uri,
-                                fileMimeType = Tools.getFileMimeType(applicationContext, uri),
-                                tempFilesToCreate = tempFilesToCreate,
-                                uriPairList = uriPairList,
-                                thumbnailUris = thumbnailUris,
-                                currentMediaLocation = currentMediaLocation
-                            )
+                            convertMedia(uri)
                         }
                     } else if (intent.type?.startsWith(Const.JsonFields.FILE_PREFIX) == true) {
-                        // Sending single file
                         filesSelected.add(uri)
                         tempFilesToCreate.add(TempUri(uri, Const.JsonFields.FILE_TYPE))
                     }
@@ -133,22 +127,9 @@ class MainActivity : BaseActivity(), ServiceConnection {
             }
 
             Intent.ACTION_SEND_MULTIPLE -> {
-                if (multipleUri != null) {
-                    Timber.d("Multiple uris: $multipleUri")
-                    multipleUri.forEach {
-                        it as Uri
-                        Timber.d("It:::::: $it")
-                        MediaHelper.convertMedia(
-                            context = applicationContext,
-                            uri = it,
-                            fileMimeType = Tools.getFileMimeType(applicationContext, it),
-                            tempFilesToCreate = tempFilesToCreate,
-                            uriPairList = uriPairList,
-                            thumbnailUris = thumbnailUris,
-                            currentMediaLocation = currentMediaLocation
-                        )
-
-                    }
+                multipleUri?.forEach {
+                    it as Uri
+                    convertMedia(it)
                 }
             }
 
@@ -166,7 +147,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
         chatSelectorBottomSheet?.setForwardShareListener(object :
             ChatSelectorBottomSheet.BottomSheetForwardAction {
             override fun forwardShare(userIds: ArrayList<Int>, roomIds: ArrayList<Int>) {
-
+                // TODO send text
                 Timber.d("Room ids: $roomIds, userIds: $userIds ")
 
                 viewModel.shareRoomId.addAll(roomIds)
@@ -183,17 +164,26 @@ class MainActivity : BaseActivity(), ServiceConnection {
         )
     }
 
-    // TODO we need to implement room id for temp messages
+    private fun convertMedia(uri: Uri) {
+        MediaHelper.convertMedia(
+            context = applicationContext,
+            uri = uri,
+            fileMimeType = Tools.getFileMimeType(applicationContext, uri),
+            tempFilesToCreate = tempFilesToCreate,
+            uriPairList = uriPairList,
+            thumbnailUris = thumbnailUris,
+            currentMediaLocation = currentMediaLocation
+        )
+    }
+
+    // TODO we need to implement room id for temp messages -> when we select users we need to send
+    // TODO that user ids to new api which will return new rooms with room ids
     private fun sendFile() {
         if (tempFilesToCreate.isNotEmpty()) {
             tempFilesToCreate.forEach {
-                createTempFileMessage(uri = it.uri, type =  it.type, roomId =  -1)
+                createTempFileMessage(uri = it.uri, type = it.type, roomId = -1)
             }
-
-            Timber.d("Temp files: $tempFilesToCreate")
             tempFilesToCreate.clear()
-
-            Timber.d("Thumbnail uris: $thumbnailUris")
 
             FilesHelper.sendFiles(
                 unsentMessages = unsentMessages,
@@ -219,7 +209,6 @@ class MainActivity : BaseActivity(), ServiceConnection {
         }
 
         if (tempMessage != null) {
-            Timber.d("Temp created message:$tempMessage")
             temporaryMessages.add(tempMessage)
             unsentMessages.add(tempMessage)
             chatViewModel.storeMessageLocally(tempMessage)
@@ -384,13 +373,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
         jsonObject.add(Const.JsonFields.USER_IDS, users)
         jsonObject.add(Const.JsonFields.MESSAGES, messages)
 
-        Timber.d("Rooms: $rooms")
-        Timber.d("Viewmodel: ${viewModel.shareRoomId}")
-        Timber.d("Viewmodel: ${viewModel.shareUserId}")
-
         viewModel.shareMedia(jsonObject = jsonObject)
-
-        Timber.d("Json object: $jsonObject")
     }
 
     override fun onServiceDisconnected(name: ComponentName?) {
@@ -416,7 +399,7 @@ class MainActivity : BaseActivity(), ServiceConnection {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-
+        // TODO add text
         // Handle the new intent when the activity is already running
         if (Intent.ACTION_SEND == intent?.action) {
             val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
