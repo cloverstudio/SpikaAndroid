@@ -7,8 +7,8 @@
     tools:context=".ui.main.chat.ChatMessagesFragment"
     tools:ignore="contentDescription">
 
-    <View
-        android:id="@+id/v_transparent"
+    <FrameLayout
+        android:id="@+id/fl_loading_screen"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@color/dark_background_transp"
@@ -19,7 +19,19 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/img_search_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:elevation="@dimen/eight_dp_margin"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+    </FrameLayout>
 
     <include
         android:id="@+id/chat_header"
@@ -72,9 +84,9 @@
             android:id="@+id/iv_add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/eight_dp_margin"
+            android:layout_marginStart="@dimen/four_dp_margin"
             android:background="@android:color/transparent"
-            android:padding="@dimen/eight_dp_margin"
+            android:padding="@dimen/four_dp_margin"
             android:src="@drawable/img_add"
             app:layout_constraintBottom_toBottomOf="@+id/cl_typing"
             app:layout_constraintStart_toStartOf="parent"
@@ -84,9 +96,9 @@
             android:id="@+id/cl_typing"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/sixteen_dp_margin"
+            android:layout_marginStart="@dimen/eight_dp_margin"
             android:layout_marginTop="@dimen/eight_dp_margin"
-            android:layout_marginEnd="@dimen/sixteen_dp_margin"
+            android:layout_marginEnd="@dimen/eight_dp_margin"
             android:layout_marginBottom="@dimen/eight_dp_margin"
             android:background="@drawable/bg_text_field"
             android:padding="@dimen/ten_dp_margin"
@@ -110,7 +122,7 @@
                 android:id="@+id/et_message"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="@dimen/sixteen_dp_margin"
                 android:layout_marginEnd="@dimen/eight_dp_margin"
                 android:background="@null"
                 android:backgroundTint="?attr/thirdAdditionalColor"
@@ -143,8 +155,6 @@
                 android:id="@+id/iv_gif"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/eight_dp_margin"
-                android:layout_marginBottom="9dp"
                 android:src="@drawable/img_gif"
                 app:layout_constraintBottom_toBottomOf="@+id/iv_btn_emoji"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -155,13 +165,14 @@
             android:id="@+id/iv_camera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/eight_dp_margin"
+            android:layout_marginEnd="@dimen/four_dp_margin"
             android:background="@android:color/transparent"
-            android:padding="@dimen/eight_dp_margin"
+            android:padding="@dimen/ten_dp_margin"
             android:src="@drawable/img_camera"
-            app:layout_constraintBottom_toBottomOf="@+id/cl_typing"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/cl_typing" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/iv_button_send"
+            app:layout_constraintStart_toEndOf="@+id/cl_typing"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/iv_button_send"
@@ -172,6 +183,7 @@
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@+id/cl_typing"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -180,17 +192,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:padding="@dimen/ten_dp_margin"
+            android:padding="@dimen/four_dp_margin"
             android:text="@string/save"
             android:textAppearance="@style/CustomTextBody"
             android:textColor="?attr/primaryColor"
             android:textSize="@dimen/fourteen_sp_text"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/cl_typing"
-            app:layout_constraintEnd_toEndOf="@+id/iv_camera"
-            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/iv_button_send"
             app:layout_constraintStart_toEndOf="@+id/cl_typing"
-            app:layout_constraintTop_toTopOf="@+id/cl_typing" />
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
@@ -207,8 +218,8 @@
         android:id="@+id/ll_everything_everywhere_all_at_once"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:background="@drawable/bg_message_received"
+        android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/cl_sending_area"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"

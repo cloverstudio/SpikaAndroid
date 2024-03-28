@@ -32,9 +32,10 @@
     <com.vanniktech.emoji.EmojiView
         android:id="@+id/view"
         android:layout_width="0dp"
+        android:layout_height="@dimen/two_hundred_fifty_six_dp"
         android:layout_marginStart="@dimen/eight_dp_margin"
         android:layout_marginEnd="@dimen/eight_dp_margin"
-        android:layout_height="@dimen/two_hundred_fifty_six_dp"
+        android:nestedScrollingEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/iv_close" />

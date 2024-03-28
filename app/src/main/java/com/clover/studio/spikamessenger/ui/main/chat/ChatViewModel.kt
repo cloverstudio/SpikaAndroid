@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -138,8 +139,10 @@ class ChatViewModel @Inject constructor(
 
     fun fetchNextSet(roomId: Int) {
         val currentLimit = liveDataLimit.value ?: 0
+        Timber.d("Current limit 1: $currentLimit, ${liveDataLimit.value}")
         if (getMessageCount(roomId = roomId) > currentLimit)
             liveDataLimit.value = currentLimit + 20
+        Timber.d("Current limit 2: $currentLimit, ${liveDataLimit.value}")
     }
 
     private fun getMessageCount(roomId: Int): Int {

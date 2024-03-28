@@ -9,6 +9,7 @@ import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.graphics.drawable.AnimationDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -92,6 +93,7 @@ import com.vanniktech.emoji.EmojiPopup
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -150,7 +152,6 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     private var listState: Parcelable? = null
     private var scrollYDistance = 0
     private var heightDiff = 0
-    private var scrollToPosition = 0
 
     private var avatarFileId = 0L
     private var userName = ""
@@ -171,6 +172,8 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     private var giphyDialog: GiphyDialogFragment? = null
 
     private var navOptionsBuilder: NavOptions? = null
+
+    private var progressAnimation: AnimationDrawable? = null
 
     private val chooseFileContract =
         registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
@@ -291,6 +294,16 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
 
         localUserId = viewModel.getLocalUserId()!!
         messageSearchId = viewModel.searchMessageId.value
+
+        bindingSetup.imgSearchLoading.apply {
+            setBackgroundResource(R.drawable.drawable_progress_animation)
+            progressAnimation = background as AnimationDrawable
+        }
+
+        if (messageSearchId != 0) {
+            bindingSetup.flLoadingScreen.visibility = View.VISIBLE
+            progressAnimation?.start()
+        }
 
         setUpAdapter()
         initializeObservers()
@@ -473,7 +486,6 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
         }
 
         ivButtonSend.setOnClickListener {
-            vTransparent.visibility = View.GONE
             if (etMessage.text?.trim().toString().isNotEmpty()) {
                 createTempTextMessage()
                 sendMessage()
@@ -618,14 +630,14 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
                                 messagesRecords.add(msg)
                             }
 
-                            chatAdapter?.submitList(messagesRecords.toList())
                             updateSwipeController()
 
                             if (listState == null && scrollYDistance == 0) {
                                 bindingSetup.rvChat.scrollToPosition(0)
                             }
-                        } else chatAdapter?.submitList(messagesRecords.toList())
+                        }
 
+                        chatAdapter?.submitList(messagesRecords.toList())
                         chatAdapter?.notifyItemRangeChanged(0, messagesRecords.size)
 
                         (view?.parent as? ViewGroup)?.doOnPreDraw {
@@ -640,58 +652,57 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
                         // If the reply is reply id != 0, it means that the search for the reply message was started and
                         // was not found in the first set of 20 messages.
                         // Other messages should be searched.
-                        if (replyPosition != 0) {
-                            if (messagesRecords.firstOrNull { messageAndRecords -> messageAndRecords.message.id == replySearchId } != null) {
-                                val position =
-                                    messagesRecords.indexOfFirst { messageAndRecords -> messageAndRecords.message.id == replySearchId }
-                                scrollToPosition = position
-                                if (position != -1) {
-                                    bindingSetup.rvChat.smoothScrollToPosition(position)
-                                    chatAdapter?.setSelectedPosition(position)
-                                }
-
-                                replySearchId = 0
-                                viewModel.searchMessageId.value = 0
-                            } else {
-                                viewModel.fetchNextSet(roomWithUsers?.room!!.roomId)
-                            }
-                        }
 
                         // If messageSearchId is not 0, it means the user navigated via message
                         // search. For now, we will just fetch next sets of data until we find
                         // the correct message id in the adapter to navigate to.
-                        if (messageSearchId != 0) {
-                            if (messagesRecords.firstOrNull { messageAndRecords -> messageAndRecords.message.id == messageSearchId } != null) {
+                        Timber.d("Reply position: $replyPosition, messageSearchId: $messageSearchId")
+                        if (replyPosition == -1 || messageSearchId != 0) {
+                            val searchId =
+                                if (replyPosition == -1) replySearchId else messageSearchId
+                            val messageFound =
+                                messagesRecords.any { msg -> msg.message.id == searchId }
+                            if (messageFound) {
                                 val position =
-                                    messagesRecords.indexOfFirst { messageAndRecords -> messageAndRecords.message.id == messageSearchId }
-                                scrollToPosition = position
+                                    messagesRecords.indexOfFirst { msg -> msg.message.id == searchId }
                                 if (position != -1) {
-                                    bindingSetup.rvChat.smoothScrollToPosition(position)
-                                    chatAdapter?.setSelectedPosition(position)
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        delay(1000)
+                                        bindingSetup.rvChat.smoothScrollToPosition(position)
+                                        delay(500)
+                                        chatAdapter?.setSelectedPosition(position)
+                                    }.invokeOnCompletion {
+                                        if (replyPosition == -1) {
+                                            replySearchId = 0
+                                            replyPosition = 0
+                                        } else {
+                                            messageSearchId = 0
+                                            viewModel.searchMessageId.value = 0
+                                        }
+                                        bindingSetup.flLoadingScreen.visibility = View.GONE
+                                        progressAnimation?.stop()
+                                    }
                                 }
-
-                                messageSearchId = 0
-                                viewModel.searchMessageId.value = 0
                             } else {
-                                viewModel.fetchNextSet(roomWithUsers?.room!!.roomId)
+                                roomWithUsers?.room?.roomId?.let { it1 -> viewModel.fetchNextSet(it1) }
                             }
                         }
                     }
 
-                    Resource.Status.LOADING -> Timber.d("Message get loading")
+                    Resource.Status.LOADING -> Timber.d("Messages loading")
                     else -> Timber.d("Message get error")
                 }
             }
 
         viewModel.messagesReceived.observe(viewLifecycleOwner) { messages ->
             val receivedMessages = messages.filter {
-                it.roomId == roomWithUsers?.room!!.roomId
+                it.roomId == roomWithUsers?.room?.roomId
                         && it.fromUserId != localUserId
             }
             if (receivedMessages.isNotEmpty()) {
                 showNewMessage(receivedMessages.size)
                 // Notify backend of messages seen
-                viewModel.sendMessagesSeen(roomWithUsers?.room!!.roomId)
+                roomWithUsers?.room?.roomId?.let { viewModel.sendMessagesSeen(it) }
             }
         }
 
@@ -758,10 +769,9 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
             }
         })
 
-        viewModel.sendMessagesSeen(roomId = roomWithUsers!!.room.roomId)
-        viewModel.updateUnreadCount(roomId = roomWithUsers!!.room.roomId)
+        roomWithUsers?.room?.roomId?.let { viewModel.sendMessagesSeen(roomId = it) }
+        roomWithUsers?.room?.roomId?.let { viewModel.updateUnreadCount(roomId = it) }
     }
-
 
     private fun showNewMessage(messagesSize: Int) = with(bindingSetup) {
         valueAnimator?.end()
@@ -898,7 +908,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
                     val totalItemCount = linearLayoutManager.itemCount
                     if (lastVisiblePosition == totalItemCount - 1 && !isFetching) {
                         Timber.d("Fetching next batch of data")
-                        viewModel.fetchNextSet(roomWithUsers!!.room.roomId)
+                        roomWithUsers?.room?.roomId?.let { viewModel.fetchNextSet(it) }
                         isFetching = true
                     } else if (lastVisiblePosition != totalItemCount - 1) {
                         isFetching = false // Reset the flag when user scrolls away from the bottom
@@ -1053,15 +1063,24 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     }
 
     private fun handleMessageReplyClick(msg: MessageAndRecords) {
+        // TODO
         replySearchId = msg.message.referenceMessage?.id
         replyPosition =
             messagesRecords.indexOfFirst { it.message.id == msg.message.referenceMessage?.id }
 
+        Timber.d("replySearchId:: $replySearchId, replyPosition: $replyPosition")
+
         if (replyPosition == -1) {
-            viewModel.fetchNextSet(roomWithUsers!!.room.roomId)
+            bindingSetup.flLoadingScreen.visibility = View.VISIBLE
+            progressAnimation?.start()
+            roomWithUsers?.room?.roomId?.let { viewModel.fetchNextSet(it) }
         } else {
-            bindingSetup.rvChat.smoothScrollToPosition(replyPosition)
+            bindingSetup.rvChat.scrollToPosition(replyPosition)
             chatAdapter?.setSelectedPosition(replyPosition)
+
+            Timber.d("Executed")
+
+            replyPosition = 0
         }
     }
 
@@ -1330,7 +1349,6 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     }
 
     private fun rotationAnimation() = with(bindingSetup) {
-        vTransparent.visibility = View.GONE
         ivAdd.rotation = ROTATION_OFF
     }
 
@@ -1748,7 +1766,7 @@ class ChatMessagesFragment : BaseFragment(), ServiceConnection {
     override fun onDestroy() {
         super.onDestroy()
         if (exoPlayer != null) {
-            exoPlayer!!.release()
+            exoPlayer?.release()
         }
         viewModel.unregisterSharedPrefsReceiver()
 

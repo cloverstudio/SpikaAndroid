@@ -252,20 +252,18 @@ class ChatAdapter(
                         holder.binding.flPreviewMsgContainer.removeAllViews()
                     }
 
-                    /** Show edited layout: */
-                    holder.binding.tvEdited.visibility =
-                        if (it.message.deleted == false && it.message.createdAt != it.message.modifiedAt) {
-                            View.VISIBLE
+                    /** Show edited/forwarded layout: */
+                    holder.binding.tvMessageAction.visibility = View.GONE
+                    if (it.message.deleted == false){
+                        if (it.message.isForwarded){
+                            holder.binding.tvMessageAction.text = context.getString(R.string.forwarded)
+                            holder.binding.tvMessageAction.visibility = View.VISIBLE
                         } else {
-                            View.GONE
+                            if (it.message.createdAt != it.message.modifiedAt){
+                                holder.binding.tvMessageAction.text = context.getString(R.string.edited)
+                                holder.binding.tvMessageAction.visibility = View.VISIBLE
+                            }
                         }
-
-                    holder.binding.tvForward.visibility = if (it.message.isForwarded &&
-                        (it.message.deleted != null && !it.message.deleted)
-                    ) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
                     }
 
                     /** Show reactions: */
@@ -406,19 +404,19 @@ class ChatAdapter(
                         holder.binding.flPreviewMsgContainer.removeAllViews()
                     }
 
-                    holder.binding.tvForward.visibility = if (it.message.isForwarded) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
-                    }
-
-                    /** Show edited layout: */
-                    holder.binding.tvEdited.visibility =
-                        if (it.message.deleted == false && it.message.createdAt != it.message.modifiedAt) {
-                            View.VISIBLE
+                    /** Show edited/forwarded layout: */
+                    holder.binding.tvMessageAction.visibility = View.GONE
+                    if (it.message.deleted == false){
+                        if (it.message.isForwarded){
+                            holder.binding.tvMessageAction.text = context.getString(R.string.forwarded)
+                            holder.binding.tvMessageAction.visibility = View.VISIBLE
                         } else {
-                            View.GONE
+                            if (it.message.createdAt != it.message.modifiedAt){
+                                holder.binding.tvMessageAction.text = context.getString(R.string.edited)
+                                holder.binding.tvMessageAction.visibility = View.VISIBLE
+                            }
                         }
+                    }
 
                     /** Show user names and avatars in group chat */
                     if (Const.JsonFields.PRIVATE == roomType) {

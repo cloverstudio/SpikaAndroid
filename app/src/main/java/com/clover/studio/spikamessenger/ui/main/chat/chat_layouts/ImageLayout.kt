@@ -43,7 +43,7 @@ class ImageLayout(context: Context) :
             context = context,
             mediaPath = mediaPath,
             mediaImage = ivChatImage,
-            loadingImage = ivMediaLoading,
+            loadingProgress = pbMediaLoading,
             height = imageResized.second,
             width = imageResized.first,
         )

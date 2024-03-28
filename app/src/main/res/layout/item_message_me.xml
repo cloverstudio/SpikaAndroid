@@ -62,7 +62,7 @@
             app:layout_constrainedWidth="true"
             app:layout_constraintBottom_toTopOf="@id/cv_reacted_emoji"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/fl_preview_msg_container"
             app:layout_constraintVertical_bias="0.0" />
@@ -81,23 +81,7 @@
             app:layout_constraintVertical_bias="1.0" />
 
         <TextView
-            android:id="@+id/tv_edited"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/two_dp_margin"
-            android:layout_marginBottom="@dimen/four_dp_margin"
-            android:elevation="@dimen/eight_dp_margin"
-            android:gravity="center"
-            android:text="@string/edited"
-            android:textAppearance="@style/CustomTextBody"
-            android:textColor="?attr/secondaryTextColor"
-            android:textSize="@dimen/nine_sp_text"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/iv_message_status" />
-
-        <TextView
-            android:id="@+id/tv_forward"
+            android:id="@+id/tv_message_action"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/eight_dp_margin"
@@ -124,12 +108,11 @@
             android:layout_marginBottom="@dimen/four_dp_margin"
             android:backgroundTint="?attr/additionalColor"
             android:outlineProvider="none"
-            android:padding="@dimen/two_dp_margin"
             android:visibility="gone"
             app:cardElevation="@dimen/two_dp_margin"
             app:cardPreventCornerOverlap="true"
-            app:layout_constraintBottom_toTopOf="@+id/tv_forward"
-            app:layout_constraintEnd_toStartOf="@+id/tv_edited"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tv_message_action"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:shapeAppearanceOverlay="@style/SenderBubbleStyle">
@@ -142,7 +125,6 @@
                 android:layout_marginTop="@dimen/two_dp_margin"
                 android:layout_marginEnd="@dimen/eight_dp_margin"
                 android:layout_marginBottom="@dimen/two_dp_margin"
-                android:padding="@dimen/one_dp_margin"
                 android:text="@string/heart_emoji"
                 android:textAppearance="@style/CustomTextBody"
                 android:textColor="?attr/primaryTextColor" />

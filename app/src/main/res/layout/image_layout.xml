@@ -1,82 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/cl_image_chat"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_image_chat"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:visibility="visible"
+    tools:ignore="contentDescription">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_chat_image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="visible">
+        android:scaleType="centerCrop"
+        android:visibility="visible"
+        app:layout_constrainedHeight="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/iv_chat_image"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:scaleType="centerCrop"
-            android:visibility="visible"
-            app:layout_constrainedHeight="true"
-            app:layout_constrainedWidth="true"
+    <ProgressBar
+        android:id="@+id/pb_media_loading"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constrainedHeight="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/fl_loading_screen"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/dark_background_transp"
+        android:backgroundTint="@color/background_80_transp"
+        android:elevation="@dimen/five_dp_margin"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/SenderBubbleStyle">
+
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/pb_images"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="@dimen/fifty_dp_margin"
+            android:layout_height="@dimen/fifty_dp_margin"
+            android:layout_gravity="center"
+            android:elevation="@dimen/five_dp_margin"
+            android:indeterminate="false"
+            android:progressDrawable="@drawable/custom_circular_progress"
+            android:progressTint="?attr/primaryColor"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
-            android:id="@+id/iv_media_loading"
+            android:id="@+id/iv_cancel_image"
+            android:layout_width="@dimen/thirty_dp_margin"
+            android:layout_height="@dimen/thirty_dp_margin"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:srcCompat="@drawable/img_cancel_image" />
+
+        <ImageView
+            android:id="@+id/iv_image_failed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:scaleType="centerInside"
-            android:src="@drawable/img_media_loading"
-            app:layout_constrainedHeight="true"
-            app:layout_constrainedWidth="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/fl_loading_screen"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="@color/dark_background_transp"
-            android:backgroundTint="@color/background_80_transp"
-            android:elevation="@dimen/five_dp_margin"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:shapeAppearanceOverlay="@style/SenderBubbleStyle">
-
-            <!-- This used to work before without tint setup. What changed? -->
-            <androidx.core.widget.ContentLoadingProgressBar
-                android:id="@+id/pb_images"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="@dimen/fifty_dp_margin"
-                android:layout_height="@dimen/fifty_dp_margin"
-                android:layout_gravity="center"
-                android:elevation="@dimen/five_dp_margin"
-                android:indeterminate="false"
-                android:progressDrawable="@drawable/custom_circular_progress"
-                android:progressTint="?attr/primaryColor"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
-                android:id="@+id/iv_cancel_image"
-                android:layout_width="@dimen/thirty_dp_margin"
-                android:layout_height="@dimen/thirty_dp_margin"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                app:srcCompat="@drawable/img_cancel_image" />
-
-            <ImageView
-                android:id="@+id/iv_image_failed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/img_upload_failed"
-                android:visibility="gone" />
-        </com.google.android.material.card.MaterialCardView>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_gravity="center"
+            android:src="@drawable/img_upload_failed"
+            android:visibility="gone" />
+    </com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

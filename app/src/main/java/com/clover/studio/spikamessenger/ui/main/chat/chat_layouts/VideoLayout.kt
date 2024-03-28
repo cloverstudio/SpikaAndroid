@@ -45,7 +45,7 @@ class VideoLayout(context: Context) :
             context = context,
             mediaPath = mediaPath,
             mediaImage = ivVideoThumbnail,
-            loadingImage = ivVideoLoading,
+            loadingProgress = pbMediaLoading,
             height = imageResized.second,
             width = imageResized.first,
             playButton = ivPlayButton
